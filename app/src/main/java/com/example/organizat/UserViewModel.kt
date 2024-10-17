@@ -26,16 +26,37 @@ class UserViewModel: ViewModel() {
                 onResult(users)
         }
     }
-    fun insertUser(user: User){
+    fun insertUser(user: User,onResult: (Boolean,String) -> Unit){
         viewModelScope.launch {
-            val newUser=user
-            newUser.hashPassword()
             withContext(Dispatchers.IO){
                 try {
-                    db.userDao().insertUser(newUser)
-                    Log.d("insertUser","user insertado: $newUser")
+                    val existingEmailUser= db.userDao().getUserByEmail(user.email)
+                    val existingUsername= db.userDao().getUserByUsername(user.username)
+
+                    when{
+                        existingEmailUser != null ->{
+                            withContext(Dispatchers.Main){
+                                onResult(false,"Correo ya registrado")
+                            }
+                        }
+                        existingUsername != null ->{
+                            withContext(Dispatchers.Main){
+                                onResult(false,"Nombre de usuario ya registrado")
+                            }
+                        }
+                        else ->{
+                            user.hashPassword()
+                            db.userDao().insertUser(user)
+                            withContext(Dispatchers.Main){
+                                onResult(true,"Usuario registrado con éxito")
+                            }
+                        }
+                    }
                 }catch (e: Exception){
-                    Log.e("DatabaseError","Error al insertar usuario",e)
+                    Log.e("DatabaseError","Error al insertar usario",e)
+                    withContext(Dispatchers.Main){
+                        onResult(false,"Error al registrar usuario")
+                    }
                 }
             }
         }
