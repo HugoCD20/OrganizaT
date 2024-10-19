@@ -1,5 +1,6 @@
 package com.example.organizat
 
+import android.provider.ContactsContract.CommonDataKinds.Email
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -9,7 +10,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class UserViewModel: ViewModel() {
-    private lateinit var db:appOrganizaT
+    private var db:appOrganizaT
     init {
         db= Room.databaseBuilder(
             MyApplication.getAppContext(),
@@ -24,6 +25,14 @@ class UserViewModel: ViewModel() {
                     userDao.getAll()
             }
                 onResult(users)
+        }
+    }
+    fun consultarUsuarioPorEmail(email: String, onResult: (User?) -> Unit){
+        viewModelScope.launch {
+            val user: User? = withContext(Dispatchers.IO){
+                db.userDao().getUserByEmail(email)
+            }
+            onResult(user)
         }
     }
     fun insertUser(user: User,onResult: (Boolean,String) -> Unit){
